@@ -1,0 +1,782 @@
+{
+  "info": {
+    "name": "Event Booking System API - Complete Collection",
+    "description": "Complete API collection for Event Ticket Booking System with automated testing and environment variables",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "event_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "booking_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "timestamp",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generate unique timestamp for email",
+                  "pm.collectionVariables.set('timestamp', Date.now());"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test response status",
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "// Test response structure",
+                  "pm.test('Response has user object', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('user');",
+                  "    pm.expect(jsonData.user).to.have.property('id');",
+                  "    pm.expect(jsonData.user).to.have.property('email');",
+                  "    pm.expect(jsonData.user).to.have.property('username');",
+                  "});",
+                  "",
+                  "// Save user ID",
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('user_id', jsonData.user.id);",
+                  "    console.log('User ID saved:', jsonData.user.id);",
+                  "}",
+                  "",
+                  "// Test no password in response",
+                  "pm.test('Password not in response', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.user).to.not.have.property('password');",
+                  "    pm.expect(jsonData.user).to.not.have.property('password_hash');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser{{timestamp}}\",\n  \"email\": \"testuser{{timestamp}}@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Register a new user account. Email and username must be unique."
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test response status",
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Test response structure",
+                  "pm.test('Response has token and user', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('token');",
+                  "    pm.expect(jsonData).to.have.property('user');",
+                  "});",
+                  "",
+                  "// Save token and user ID",
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('token', jsonData.token);",
+                  "    pm.collectionVariables.set('user_id', jsonData.user.id);",
+                  "    console.log('Token saved');",
+                  "    console.log('User ID:', jsonData.user.id);",
+                  "}",
+                  "",
+                  "// Test token format",
+                  "pm.test('Token is JWT format', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    var tokenParts = jsonData.token.split('.');",
+                  "    pm.expect(tokenParts).to.have.lengthOf(3);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"testuser{{timestamp}}@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Authenticate user and receive JWT token."
+          }
+        },
+        {
+          "name": "Login - Invalid Credentials",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Error message present', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('error');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"wrong@example.com\",\n  \"password\": \"wrongpassword\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Test login with invalid credentials - should return 401."
+          }
+        }
+      ],
+      "description": "Authentication endpoints for user registration and login"
+    },
+    {
+      "name": "2. Events",
+      "item": [
+        {
+          "name": "Initialize Event",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has event details', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('eventId');",
+                  "    pm.expect(jsonData).to.have.property('name');",
+                  "    pm.expect(jsonData).to.have.property('totalTickets');",
+                  "    pm.expect(jsonData).to.have.property('availableTickets');",
+                  "});",
+                  "",
+                  "pm.test('Available tickets equals total tickets', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.availableTickets).to.equal(jsonData.totalTickets);",
+                  "});",
+                  "",
+                  "// Save event ID",
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('event_id', jsonData.eventId);",
+                  "    console.log('Event ID saved:', jsonData.eventId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Tech Conference 2024\",\n  \"totalTickets\": 100\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/initialize",
+              "host": ["{{base_url}}"],
+              "path": ["initialize"]
+            },
+            "description": "Create a new event with specified ticket capacity."
+          }
+        },
+        {
+          "name": "Initialize Event - Without Auth",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Tech Conference 2024\",\n  \"totalTickets\": 100\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/initialize",
+              "host": ["{{base_url}}"],
+              "path": ["initialize"]
+            },
+            "description": "Test event creation without authentication - should return 401."
+          }
+        },
+        {
+          "name": "Get Event Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has complete event status', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('eventId');",
+                  "    pm.expect(jsonData).to.have.property('name');",
+                  "    pm.expect(jsonData).to.have.property('totalTickets');",
+                  "    pm.expect(jsonData).to.have.property('availableTickets');",
+                  "    pm.expect(jsonData).to.have.property('bookedTickets');",
+                  "    pm.expect(jsonData).to.have.property('waitingListCount');",
+                  "});",
+                  "",
+                  "pm.test('Ticket counts are consistent', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    var sum = jsonData.availableTickets + jsonData.bookedTickets;",
+                  "    pm.expect(sum).to.equal(jsonData.totalTickets);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/status/{{event_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["status", "{{event_id}}"]
+            },
+            "description": "Get current status of an event including ticket availability and waiting list count."
+          }
+        }
+      ],
+      "description": "Event management endpoints"
+    },
+    {
+      "name": "3. Bookings",
+      "item": [
+        {
+          "name": "Book Ticket - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 or 200', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 201) {",
+                  "    pm.test('Booking confirmed', function () {",
+                  "        var jsonData = pm.response.json();",
+                  "        pm.expect(jsonData).to.have.property('bookingId');",
+                  "        pm.expect(jsonData.status).to.equal('confirmed');",
+                  "    });",
+                  "    ",
+                  "    // Save booking ID",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('booking_id', jsonData.bookingId);",
+                  "    console.log('Booking ID saved:', jsonData.bookingId);",
+                  "} else {",
+                  "    pm.test('Added to waiting list', function () {",
+                  "        var jsonData = pm.response.json();",
+                  "        pm.expect(jsonData).to.have.property('waitingListId');",
+                  "        pm.expect(jsonData).to.have.property('position');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": {{event_id}},\n  \"userId\": {{user_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/book",
+              "host": ["{{base_url}}"],
+              "path": ["book"]
+            },
+            "description": "Book a ticket for a user. Returns booking confirmation or waiting list position."
+          }
+        },
+        {
+          "name": "Book Ticket - Duplicate",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 409', function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "",
+                  "pm.test('Error message indicates duplicate booking', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error.message).to.include('already');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": {{event_id}},\n  \"userId\": {{user_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/book",
+              "host": ["{{base_url}}"],
+              "path": ["book"]
+            },
+            "description": "Attempt to book duplicate ticket - should return 409 conflict."
+          }
+        },
+        {
+          "name": "Cancel Booking",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has cancellation details', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData).to.have.property('reassigned');",
+                  "});",
+                  "",
+                  "pm.test('Message confirms cancellation', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('cancelled');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookingId\": {{booking_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["cancel"]
+            },
+            "description": "Cancel a booking. If waiting list exists, ticket is automatically reassigned."
+          }
+        },
+        {
+          "name": "Cancel Booking - Not Found",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookingId\": 99999\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["cancel"]
+            },
+            "description": "Test cancelling non-existent booking - should return 404."
+          }
+        }
+      ],
+      "description": "Booking and cancellation endpoints"
+    },
+    {
+      "name": "4. Complete Workflows",
+      "item": [
+        {
+          "name": "1 - Register",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.set('timestamp', Date.now());"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"flowuser{{timestamp}}\",\n  \"email\": \"flowuser{{timestamp}}@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "2 - Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "pm.collectionVariables.set('token', jsonData.token);",
+                  "pm.collectionVariables.set('user_id', jsonData.user.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"flowuser{{timestamp}}@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "3 - Create Event",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "pm.collectionVariables.set('event_id', jsonData.eventId);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Workshop {{timestamp}}\",\n  \"totalTickets\": 5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/initialize",
+              "host": ["{{base_url}}"],
+              "path": ["initialize"]
+            }
+          }
+        },
+        {
+          "name": "4 - Book Ticket",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('booking_id', jsonData.bookingId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": {{event_id}},\n  \"userId\": {{user_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/book",
+              "host": ["{{base_url}}"],
+              "path": ["book"]
+            }
+          }
+        },
+        {
+          "name": "5 - Check Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/status/{{event_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["status", "{{event_id}}"]
+            }
+          }
+        },
+        {
+          "name": "6 - Cancel Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookingId\": {{booking_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["cancel"]
+            }
+          }
+        }
+      ],
+      "description": "Complete workflow from registration to booking cancellation. Run these in order."
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global pre-request script",
+          "console.log('Request:', pm.request.method, pm.request.url);"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test script",
+          "console.log('Response:', pm.response.code, pm.response.status);"
+        ]
+      }
+    }
+  ]
+}

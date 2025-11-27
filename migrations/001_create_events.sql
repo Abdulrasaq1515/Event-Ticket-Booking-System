@@ -1,0 +1,12 @@
+USE event_booking;
+
+CREATE TABLE IF NOT EXISTS  events (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(255) NOT NULL,
+    total_tickets INT NOT NULL,
+    available_tickets INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_event_name (name)
+) ENGINE=InnoDB;
+
